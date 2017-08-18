@@ -36,3 +36,28 @@ For example, to create an Application User object from claims in a JWT that prov
     }
 
 ```
+
+## Creating Custom Attributes to Reduce Noise
+
+Specifying the Attribute repeatedly with the type of the converter can get annoying quickly, so it is recommended that you extend *FromPrincipalAttribute* in your application code, providing your converter definition.
+
+```
+    public class JwtUserAttribute : FromPrincipalAttribute
+    {
+        public JwtUserAttribute() : base(typeof(JwtUserPrincipalConverter))
+        {
+        }
+    }
+```
+
+Doing this simplifies your code from:
+
+```
+public async Task<IHttpActionResult> DoStuff([FromPrincipal(typeof(JwtUserPrincipalConverter))] JwtUser user)
+```
+
+to
+
+```
+public async Task<IHttpActionResult> DoStuff([JwtUser] JwtUser user)
+```

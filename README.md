@@ -2,12 +2,12 @@
 
 This is a simple project that allows you to bind values from the *IPrincipal* to arguments to your controller method.
 
-Simply mark method arguments on your controller methods with the *[FromPrinicpal]* attribute to have then load their corresponding value from the *IPrinicpal*.
+Simply mark method arguments on your controller methods with the *[FromPrinicpal]* attribute to have then load their corresponding value from the ```IPrinicpal```.
 
 
 ## Implementing IFromPrincipalConverter
 
-To allow multiple values to be extracted from the *IPrincipal*, or to allow the conversion of Claim types to complex objects you must provide an implementation of *IFromPrincipalConverter* when defining the attribute.
+To allow multiple values to be extracted from the ```IPrincipal```, or to allow the conversion of Claim types to complex objects you must provide an implementation of ```IFromPrincipalConverter``` when defining the attribute.
 
 For example, to create an Application User object from claims in a JWT that provide a id and role claim you would implement:
 
@@ -39,7 +39,7 @@ For example, to create an Application User object from claims in a JWT that prov
 
 ## Creating Custom Attributes to Reduce Noise
 
-Specifying the Attribute repeatedly with the type of the converter can get annoying quickly, so it is recommended that you extend *FromPrincipalAttribute* in your application code, providing your converter definition.
+Specifying the Attribute repeatedly with the type of the converter can get annoying quickly, so it is recommended that you extend ```FromPrincipalAttribute``` in your application code, providing your converter definition.
 
 ```
     public class JwtUserAttribute : FromPrincipalAttribute
@@ -61,3 +61,13 @@ to
 ```
 public async Task<IHttpActionResult> DoStuff([JwtUser] JwtUser user)
 ```
+
+## Hiding the Parameter from Swagger
+
+Simply open up your Swagger config and add the following line:
+
+```
+c.OperationFilter<SwaggerHiddenOperationFilter>();
+```
+
+This will hide any parameter to your Controller methods that are marked with the ```FromPrincipalAttribute``` Attribute (or sub-classes)

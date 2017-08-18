@@ -17,7 +17,7 @@ When using JWT I have fallen into a pattern of writing a ```ApiController``` bas
             {
                 var principal = RequestContext.Principal;
 
-                var userId = GetClaim(principal, Claims.FractionIdClaimName)?.Value;
+                var userId = GetClaim(principal, Claims.ApplicationIdClaimName)?.Value;
 
                 if (string.IsNullOrEmpty(userId))
                 {

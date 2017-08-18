@@ -119,4 +119,4 @@ Simply open up your Swagger config and add the following line:
 c.OperationFilter<SwaggerHiddenOperationFilter>();
 ```
 
-This will hide any parameter to your Controller methods that are marked with the ```FromPrincipalAttribute``` Attribute (or sub-classes)
+This will hide any parameter to your Controller methods that are marked with the ```FromClaim``` Attribute (or any Attribute that implements ```ISwaggerHiddenAttribute```)

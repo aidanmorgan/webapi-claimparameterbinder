@@ -1,66 +1,115 @@
+
 # webapi-claimparameterbinder
 
 This is a simple project that allows you to bind values from the *IPrincipal* to arguments to your controller method.
 
-Simply mark method arguments on your controller methods with the *[FromPrinicpal]* attribute to have then load their corresponding value from the ```IPrinicpal```.
+Simply mark method arguments on your controller methods with the *[FromClaim]* attribute to have then load their corresponding value from the ```IPrinicpal```. You can specify a name of the claim, use the name of the controller parameter as the claim name or perform complex object conversions.
 
 
-## Implementing IFromPrincipalConverter
+## Why?
 
-To allow multiple values to be extracted from the ```IPrincipal```, or to allow the conversion of Claim types to complex objects you must provide an implementation of ```IFromPrincipalConverter``` when defining the attribute.
-
-For example, to create an Application User object from claims in a JWT that provide a id and role claim you would implement:
+When using JWT I have fallen into a pattern of writing an extension method for the ```ApiController```s in my application that does something like this:
 
 ```
-    public class JwtUserPrincipalConverter : IFromPrincipalConverter
-    {
-
-        public object FromPrincipal(IPrincipal p)
+        public static ApplicationUser GetUser(this ApiController controller)
         {
-            var userId = GetClaim(p, "id")?.Value;
-            var role = GetClaim(p, "role")?.Value;
+            var principal = controller.RequestContext.Principal;
+
+            var userId = GetClaim(principal, Claims.ApplicationIdClaimName)?.Value;
+            var role = GetClaim(principal, Claims.ApplicationRoleClaimName)?.Value;
 
             if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(role))
             {
                 throw new HttpResponseException(HttpStatusCode.Unauthorized);
             }
 
-            return JwtUser.Create(userId, role);
+            return ApplicationUser.Create(userId, role);
         }
+```
 
-        private static Claim GetClaim(IPrincipal contextUser, string name)
+Then having to have ever controller method write code like this:
+
+```
+        public async Task<IHttpActionResult> DoStuff([)
         {
-            ClaimsPrincipal claims = contextUser as ClaimsPrincipal;
-            return claims?.Claims.FirstOrDefault(x => string.Equals(x.Type, name, StringComparison.OrdinalIgnoreCase));
+            var user = this.GetUser();
+
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            // do work here
+
+            return Ok();
         }
-    }
-
 ```
 
-## Creating Custom Attributes to Reduce Noise
+## Using ClaimParameterBinder - Simple Case
 
-Specifying the Attribute repeatedly with the type of the converter can get annoying quickly, so it is recommended that you extend ```FromPrincipalAttribute``` in your application code, providing your converter definition.
+If you want to bind a simple value to a Claim in the ```IPrincipal``` you can simply do:
 
 ```
-    public class JwtUserAttribute : FromPrincipalAttribute
+public async Task<IHttpActionResult> DoStuff([FromClaim("application_id")] Guid id)
+```
+
+Or even easier, if you want to take advantage of the matching provided by ASP:
+
+```
+public async Task<IHttpActionResult> DoStuff([FromClaim] Guid application_id)
+```
+
+## Using ClaimParameterBinder - Complex Objects
+
+Sometimes you might want to map multiple Claim values in the ```IPrincipal``` to a controller parameter, to do this you use a ```IFromClaimTypeConverter```. Implementing this interface is simple:
+
+```
+    public class ApplicationUserClaimTypeConverter : IFromClaimTypeConverter
     {
-        public JwtUserAttribute() : base(typeof(JwtUserPrincipalConverter))
+        public object FromPrincipal(IPrincipal principal)
         {
+            var id = principal.GetClaim(Claims.ApplicationIdClaimName)?.Value;
+            var role = principal.GetClaim(Claims.ApplicationRoleClaimName)?.Value;
+
+            if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(role))
+            {
+                throw new HttpResponseException(HttpStatusCode.Unauthorized);
+            }
+
+            return ApplicationUser.Create(id, role);
         }
     }
 ```
 
-Doing this simplifies your code from:
+This converter will now be called when a complex value is encountered for the ```[FromClaim]``` attribute.
+
+### Registering IFromClaimTypeConverter
+
+There are two ways to use the custom ```IFromClaimTypeConverter```, either registering them globally, or specifying it as part of the attribute.
+
+**Global Registration**
+
+To register globally simply put the following line in your ```WebApiConfig```:
 
 ```
-public async Task<IHttpActionResult> DoStuff([FromPrincipal(typeof(JwtUserPrincipalConverter))] JwtUser user)
+FromClaimTypeConverters.Add(typeof(ApplicationUser), new ApplicationUserClaimTypeConverter());
 ```
 
-to
+Now you can use a complex object in your Controller definitions:
 
 ```
-public async Task<IHttpActionResult> DoStuff([JwtUser] JwtUser user)
+public async Task<IHttpActionResult> DoStuff([FromClaim(BindingType.Complex)] ApplicationUser user)
 ```
+
+**Attribute Specification**
+
+If you don't want to register your ```IFromClaimTypeConverter``` globally, then you can specify it as part of the attribute declaration.
+
+```
+public async Task<IHttpActionResult> DoStuff([FromClaim(typeof(ApplicationUserClaimTypeConverter))] FractionUser user)
+```
+
+
 
 ## Hiding the Parameter from Swagger
 

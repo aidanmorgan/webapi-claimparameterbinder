@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace AspWebApi.IPrincipalBinder
 {
-    public interface IFromPrincipalConverter
+    public interface IFromClaimTypeConverter
     {
         object FromPrincipal(IPrincipal principal);
     }

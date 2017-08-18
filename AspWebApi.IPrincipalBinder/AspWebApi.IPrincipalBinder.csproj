@@ -50,10 +50,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FromPrincipalAttribute.cs" />
-    <Compile Include="FromPrincipalParameterBinding.cs" />
-    <Compile Include="IFromPrincipalConverter.cs" />
+    <Compile Include="Bindings\ComplexClaimBinding.cs" />
+    <Compile Include="BindingType.cs" />
+    <Compile Include="FromClaimAttribute.cs" />
+    <Compile Include="FromClaimParameterBinding.cs" />
+    <Compile Include="FromClaimTypeConverters.cs" />
+    <Compile Include="IClaimBinding.cs" />
+    <Compile Include="IFromClaimTypeConverter.cs" />
+    <Compile Include="IPrincipalExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Bindings\SimpleClaimBinding.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

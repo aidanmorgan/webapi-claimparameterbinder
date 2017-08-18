@@ -8,22 +8,24 @@ Simply mark method arguments on your controller methods with the *[FromClaim]* a
 
 ## Why?
 
-When using JWT I have fallen into a pattern of writing an extension method for the ```ApiController```s in my application that does something like this:
+When using JWT I have fallen into a pattern of writing a ```ApiController``` base class in my application that does something like this:
 
 ```
-        public static ApplicationUser GetUser(this ApiController controller)
+        protected Guid? UserId
         {
-            var principal = controller.RequestContext.Principal;
-
-            var userId = GetClaim(principal, Claims.ApplicationIdClaimName)?.Value;
-            var role = GetClaim(principal, Claims.ApplicationRoleClaimName)?.Value;
-
-            if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(role))
+            get
             {
-                throw new HttpResponseException(HttpStatusCode.Unauthorized);
-            }
+                var principal = RequestContext.Principal;
 
-            return ApplicationUser.Create(userId, role);
+                var userId = GetClaim(principal, Claims.FractionIdClaimName)?.Value;
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return null;
+                }
+
+                return Guid.Parse(userId);
+            }
         }
 ```
 
@@ -32,9 +34,7 @@ Then having to have ever controller method write code like this:
 ```
         public async Task<IHttpActionResult> DoStuff([)
         {
-            var user = this.GetUser();
-
-            if (user == null)
+            if (!UserId.HasValue)
             {
                 return Unauthorized();
             }
@@ -44,6 +44,10 @@ Then having to have ever controller method write code like this:
             return Ok();
         }
 ```
+
+One afternoon, after doing this for about the 100th time I got fed up and decided to learn about ASP Parameter Binding.
+
+
 
 ## Using ClaimParameterBinder - Simple Case
 
